@@ -13,6 +13,7 @@ from .easyslurm import (
     CommandResult,
     SubmitResult,
     default_gpu_options,
+    _parse_job_id
 )
 
 __all__ = [
