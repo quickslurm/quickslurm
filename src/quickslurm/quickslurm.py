@@ -45,7 +45,7 @@ from .data import SubmitResult, CommandResult
 from logging import Logger
 from pathlib import Path
 from typing import Dict, Mapping, Optional, Sequence, Union, List
-from utils import (
+from .utils import (
     SlurmCommandError, SlurmError,
     _build_flag_kv, _get_or_create_default_logger, 
     _env_with, _parse_job_id, _slurm_wait, 
