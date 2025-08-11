@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from quickslurm import Slurm, SlurmCommandError
-from utils import _parse_job_id
+from quickslurm.utils import _parse_job_id
 
 
 class FakeCompletedProcess:
