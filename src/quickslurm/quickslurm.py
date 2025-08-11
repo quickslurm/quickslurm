@@ -1,11 +1,10 @@
 """
-slurm_wrapper.py
 
 A lightweight Slurm wrapper for submitting batch jobs (sbatch) and running tasks (srun)
 with robust subprocess handling.
 
 Usage:
-    from slurm_wrapper import Slurm, SlurmError
+    from quickslurm import Slurm, SlurmError
 
     slurm = Slurm()  # or Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
 
@@ -35,12 +34,7 @@ Usage:
     print(res.stdout)
 """
 
-"""
-slurm_wrapper.py — Python 3.8+
 
-A lightweight Slurm wrapper for sbatch/srun with robust subprocess handling
-and optional logging to CWD (fallback /tmp).
-"""
 
 import logging
 import os
@@ -124,14 +118,14 @@ def _parse_job_id(sbatch_stdout: str) -> int:
 
 
 def _default_log_path() -> Path:
-    """Choose CWD/slurm_wrapper.log, falling back to /tmp/slurm_wrapper.log."""
-    cwd_path = Path.cwd() / "slurm_wrapper.log"
+    """Choose CWD/quickslurm.log, falling back to /tmp/quickslurm.log."""
+    cwd_path = Path.cwd() / "quickslurm.log"
     try:
         # Touch to ensure we have perms; keep the file for reuse
         cwd_path.touch(exist_ok=True)
         return cwd_path
     except (OSError, PermissionError):
-        tmp_path = Path("/tmp/slurm_wrapper.log")
+        tmp_path = Path("/tmp/quickslurm.log")
         tmp_path.touch(exist_ok=True)
         return tmp_path
 
@@ -143,7 +137,7 @@ def _get_or_create_default_logger() -> Logger:
       - Stream handler (stderr)
     Prevents duplicate handlers if Slurm() is constructed multiple times.
     """
-    logger = logging.getLogger("slurm_wrapper")
+    logger = logging.getLogger("quickslurm")
     if getattr(logger, "_slurm_logger_configured", False):
         return logger
 
@@ -200,7 +194,7 @@ class Slurm:
         elif enable_logging is True:
             self.logger = _get_or_create_default_logger()
         else:
-            self.logger = logging.getLogger("slurm_wrapper.null")
+            self.logger = logging.getLogger("quickslurm.null")
             self.logger.handlers.clear()
             self.logger.addHandler(logging.NullHandler())
             self.logger.propagate = False

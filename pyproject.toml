@@ -13,7 +13,7 @@ authors = [
     { name = "Alex Buettner", email = "alex.buettner93@gmail.com" },
     { name = "Jack Quimby", email = "jack.quimby54@gmail.com"}
 ]
-keywords = ["slurm", "sbatch", "srun", "hpc", "cluster", "wrapper", "easyslurm", "easy"]
+keywords = ["slurm", "sbatch", "srun", "hpc", "cluster", "wrapper", "quickslurm", "quick"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -50,7 +50,7 @@ source = "vcs"
 [tool.hatch.build]
 # Include only needed files
 include = [
-    "src/slurm_wrapper/**",
+    "src/quickslurm/**",
     "README.md",
     "LICENSE"
 ]
