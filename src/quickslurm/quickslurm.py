@@ -48,7 +48,7 @@ from typing import Dict, Mapping, Optional, Sequence, Union, List
 from .utils import (
     SlurmCommandError, SlurmError,
     _build_flag_kv, _get_or_create_default_logger, 
-    _env_with, _parse_job_id, _slurm_wait, 
+    _env_with, _parse_job_id, _slurm_wait, default_gpu_options
 )
 
 # ----------------- Main class -----------------
@@ -249,25 +249,4 @@ class Slurm:
         return result
 
 
-# ----------------- Convenience preset -----------------
 
-def default_gpu_options(
-        gpus: int = 1,
-        *,
-        partition: Optional[str] = None,
-        time: str = "01:00:00",
-        mem: Optional[str] = None,
-        cpus_per_task: Optional[int] = None,
-        gres_type: str = "gpu",
-) -> Dict[str, Union[str, int]]:
-    """
-    Quick helper to build common GPU sbatch options.
-    """
-    opts: Dict[str, Union[str, int]] = {"time": time, "gres": f"{gres_type}:{gpus}"}
-    if partition:
-        opts["partition"] = partition
-    if mem:
-        opts["mem"] = mem
-    if cpus_per_task:
-        opts["cpus-per-task"] = cpus_per_task
-    return opts

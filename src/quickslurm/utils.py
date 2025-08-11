@@ -1,7 +1,7 @@
 import re
 import os
 import logging
-from typing import  Mapping, Optional, Union, List
+from typing import  Mapping, Optional, Union, List, Dict
 from .data import CommandResult
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
@@ -23,7 +23,6 @@ class SlurmParseError(SlurmError):
 
 
 # ----------------- Helpers -----------------
-
 _JOB_ID_RE = re.compile(r"Submitted batch job\s+(\d+)")
 
 def _env_with(overrides: Optional[Mapping[str, str]] = None) -> Mapping[str, str]:
@@ -125,3 +124,27 @@ def _slurm_wait(job_id) -> None:
         except subprocess.CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
+
+# ----------------- Convenience preset -----------------
+
+def default_gpu_options(
+        gpus: int = 1,
+        *,
+        partition: Optional[str] = None,
+        time: str = "01:00:00",
+        mem: Optional[str] = None,
+        cpus_per_task: Optional[int] = None,
+        gres_type: str = "gpu",
+) -> Dict[str, Union[str, int]]:
+    """
+    Quick helper to build common GPU sbatch options.
+    """
+    opts: Dict[str, Union[str, int]] = {"time": time, "gres": f"{gres_type}:{gpus}"}
+    if partition:
+        opts["partition"] = partition
+    if mem:
+        opts["mem"] = mem
+    if cpus_per_task:
+        opts["cpus-per-task"] = cpus_per_task
+    return opts
+
