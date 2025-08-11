@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from easyslurm import Slurm, SlurmCommandError, _parse_job_id
+from quickslurm import Slurm, SlurmCommandError, _parse_job_id
 
 
 class FakeCompletedProcess:

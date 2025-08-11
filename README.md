@@ -5,4 +5,4 @@ A lightweight Python wrapper for Slurm (`sbatch`/`srun`) with robust subprocess 
 ## Install
 
 ```bash
-pip install easyslurm
+pip install quickslurm

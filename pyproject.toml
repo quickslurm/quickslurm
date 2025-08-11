@@ -3,7 +3,7 @@ requires = ["hatchling>=1.18.0", "hatch-vcs>=0.4.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "easyslurm"          # change if name is taken on PyPI
+name = "quickslurm"          # change if name is taken on PyPI
 dynamic = ["version"]
 description = "A lightweight Python wrapper for Slurm sbatch/srun with robust subprocess handling and optional logging."
 readme = "README.md"
@@ -40,9 +40,9 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JayQuimby/easyslurm"
-Repository = "https://github.com/JayQuimby/easyslurm"
-Issues = "https://github.com/JayQuimby/easyslurm/issues"
+Homepage = "https://github.com/JayQuimby/quickslurm"
+Repository = "https://github.com/JayQuimby/quickslurm"
+Issues = "https://github.com/JayQuimby/quickslurm/issues"
 
 [tool.hatch.version]
 source = "vcs"

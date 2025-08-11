@@ -1,11 +1,11 @@
 from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = version("easyslurm")  # keep in sync with [project].name
+    __version__ = version("quickslurm")  # keep in sync with [project].name
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
-from .easyslurm import (
+from .quickslurm import (
     Slurm,
     SlurmError,
     SlurmCommandError,
