@@ -104,7 +104,7 @@ def _build_flag_kv(options: Mapping[str, Union[str, int, float, bool]]) -> List[
     """
     args: List[str] = []
     for k, v in options.items():
-        key = str(k).strip()
+        key = str(k).strip().replace('_', '-')
         if isinstance(v, bool):
             if v:
                 args.append(f"--{key}")
