@@ -38,128 +38,18 @@ Usage:
 
 import logging
 import os
-import re
 import shlex
 import subprocess
 import tempfile
-from dataclasses import dataclass
+from .data import SubmitResult, CommandResult
 from logging import Logger
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Dict, Mapping, Optional, Sequence, Union, List
-
-
-# ----------------- Data structures -----------------
-
-@dataclass(frozen=True)
-class CommandResult:
-    returncode: int
-    stdout: str
-    stderr: str
-    args: List[str]
-
-
-@dataclass(frozen=True)
-class SubmitResult:
-    job_id: int
-    stdout: str
-    stderr: str
-    args: List[str]
-
-
-# ----------------- Exceptions -----------------
-
-class SlurmError(RuntimeError):
-    pass
-
-
-class SlurmCommandError(SlurmError):
-    def __init__(self, message: str, result: CommandResult):
-        super().__init__(message)
-        self.result = result
-
-
-class SlurmParseError(SlurmError):
-    pass
-
-
-# ----------------- Helpers -----------------
-
-def _env_with(overrides: Optional[Mapping[str, str]] = None) -> Mapping[str, str]:
-    env = os.environ.copy()
-    if overrides:
-        env.update({str(k): str(v) for k, v in overrides.items()})
-    return env
-
-
-def _build_flag_kv(options: Mapping[str, Union[str, int, float, bool]]) -> List[str]:
-    """
-    Map {"job-name": "x", "exclusive": True} -> ["--job-name=x", "--exclusive"]
-    """
-    args: List[str] = []
-    for k, v in options.items():
-        key = str(k).strip().replace('_', '-')
-        if isinstance(v, bool):
-            if v:
-                args.append(f"--{key}")
-        else:
-            args.append(f"--{key}={v}")
-    return args
-
-
-_JOB_ID_RE = re.compile(r"Submitted batch job\s+(\d+)")
-
-
-def _parse_job_id(sbatch_stdout: str) -> int:
-    m = _JOB_ID_RE.search(sbatch_stdout)
-    if not m:
-        raise SlurmParseError(f"Could not parse job id from sbatch output:\n{sbatch_stdout}")
-    return int(m.group(1))
-
-
-def _default_log_path() -> Path:
-    """Choose CWD/quickslurm.log, falling back to /tmp/quickslurm.log."""
-    cwd_path = Path.cwd() / "quickslurm.log"
-    try:
-        # Touch to ensure we have perms; keep the file for reuse
-        cwd_path.touch(exist_ok=True)
-        return cwd_path
-    except (OSError, PermissionError):
-        tmp_path = Path("/tmp/quickslurm.log")
-        tmp_path.touch(exist_ok=True)
-        return tmp_path
-
-
-def _get_or_create_default_logger() -> Logger:
-    """
-    Return a module-level logger configured once with:
-      - Rotating file handler (5MB, 3 backups)
-      - Stream handler (stderr)
-    Prevents duplicate handlers if Slurm() is constructed multiple times.
-    """
-    logger = logging.getLogger("quickslurm")
-    if getattr(logger, "_slurm_logger_configured", False):
-        return logger
-
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False  # keep logs from duplicating up the root chain
-
-    # File handler (rotation keeps the file from growing forever)
-    log_path = _default_log_path()
-    fh = RotatingFileHandler(str(log_path), maxBytes=5 * 1024 * 1024, backupCount=3)
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
-
-    # Stderr handler for convenience
-    sh = logging.StreamHandler()
-    sh.setFormatter(fmt)
-    logger.addHandler(sh)
-
-    logger._slurm_logger_configured = True  # type: ignore[attr-defined]
-    logger.info(f"[Slurm] Logging initialized at {log_path}")
-    return logger
-
+from utils import (
+    SlurmCommandError, SlurmError,
+    _build_flag_kv, _get_or_create_default_logger, 
+    _env_with, _parse_job_id, _slurm_wait, 
+)
 
 # ----------------- Main class -----------------
 
@@ -309,6 +199,7 @@ class Slurm:
             timeout: Optional[float] = None,
             check: bool = True,
             input_text: Optional[str] = None,
+            wait: bool= False
     ) -> CommandResult:
         merged_env = self.base_env.copy()
         if env:
@@ -326,6 +217,8 @@ class Slurm:
                 timeout=timeout if timeout is not None else self.default_timeout,
                 check=False,
             )
+            if wait:
+                _slurm_wait(_parse_job_id(cp.stdout))
         except subprocess.TimeoutExpired as e:
             self.logger.error("[Slurm] Timeout after %ss", (timeout or self.default_timeout))
             raise SlurmCommandError(
