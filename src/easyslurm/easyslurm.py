@@ -46,13 +46,13 @@ import logging
 import os
 import re
 import shlex
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from logging import Logger
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Dict, Mapping, Optional, Sequence, Union, List
-import subprocess
 
 
 # ----------------- Data structures -----------------
@@ -177,7 +177,7 @@ class Slurm:
             srun_path: str = "srun",
             default_timeout: Optional[float] = None,
             base_env: Optional[Mapping[str, str]] = None,
-            enable_logging: Union[bool, Logger] = True,
+            enable_logging: Union[bool, Logger] = False,
     ):
         """
         Args:
