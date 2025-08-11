@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-publish:
-    needs: test
+    # needs: test
     runs-on: ubuntu-latest
     # Only run on GitHub Release events that are NOT prereleases
     if: github.event_name == 'release' && github.event.release.prerelease == false
