@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling>=1.18.0", "hatch-vcs>=0.4.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "easyslurm"          # change if name is taken on PyPI
+dynamic = ["version"]
+description = "A lightweight Python wrapper for Slurm sbatch/srun with robust subprocess handling and optional logging."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Alex Buettner", email = "alex.buettner93@gmail.com" },
+    { name = "Jack Quimby", email = "jack.quimby54@gmail.com"}
+]
+keywords = ["slurm", "sbatch", "srun", "hpc", "cluster", "wrapper", "easyslurm", "easy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Scientific/Engineering"
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/JayQuimby/easyslurm"
+Repository = "https://github.com/JayQuimby/easyslurm"
+Issues = "https://github.com/JayQuimby/easyslurm/issues"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build]
+# Include only needed files
+include = [
+    "src/slurm_wrapper/**",
+    "README.md",
+    "LICENSE"
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "README.md", "LICENSE", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["src"]
