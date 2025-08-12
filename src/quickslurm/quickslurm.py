@@ -99,6 +99,7 @@ class Slurm:
             script_args: Optional[Sequence[str]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
+            set_wait: bool = False,
     ) -> SubmitResult:
         """
         Submit an existing batch script via sbatch.
@@ -112,7 +113,7 @@ class Slurm:
         cmd.append(str(script_path))
         cmd += [str(a) for a in script_args]
 
-        result = self._run(cmd, env=_env_with(extra_env), timeout=timeout)
+        result = self._run(cmd, env=_env_with(extra_env), timeout=timeout, wait=set_wait)
         job_id = _parse_job_id(result.stdout)
         return SubmitResult(job_id=job_id, stdout=result.stdout, stderr=result.stderr, args=result.args)
 
@@ -125,6 +126,7 @@ class Slurm:
             workdir: Optional[Union[str, Path]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
+            set_wait: bool = False,
     ) -> SubmitResult:
         """
         Generate a temporary script containing `command` and submit it via sbatch.
@@ -148,6 +150,7 @@ class Slurm:
                 script_args=None,
                 extra_env=extra_env,
                 timeout=timeout,
+                set_wait=set_wait
             )
         finally:
             try:
@@ -163,6 +166,7 @@ class Slurm:
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
             check: bool = True,
+            set_wait: bool = False,
     ) -> CommandResult:
         """
         Run a command via srun (non-interactive).
@@ -172,7 +176,7 @@ class Slurm:
             cmd += _build_flag_kv(srun_options)
         cmd += [str(c) for c in command]
 
-        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check)
+        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=set_wait)
 
     def cancel(
             self,
