@@ -452,5 +452,4 @@ CommandResult:
 ---
 
 ## License
-
-MIT (or as provided by your project).
+See `LICENSE` for more information.
