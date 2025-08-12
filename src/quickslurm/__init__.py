@@ -1,10 +1,9 @@
 from importlib.metadata import version, PackageNotFoundError
 
 try:
-    from ._version import __version__
-except ImportError:
-    # Fallback for development installs
-    __version__ = "0.0.0+unknown"
+    __version__ = version("quickslurm")  # must match [project].name in pyproject
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "0.0.0"
 
 
 from .data import (
@@ -25,16 +24,26 @@ from .utils import (
     default_gpu_options
 )
 
-from .quickslurm import Slurm
+# Re-export public API from the implementation module
+
+from .quickslurm import (
+    Slurm,
+    SlurmError,
+    SlurmCommandError,
+    CommandResult,
+    SubmitResult,
+    default_gpu_options,
+)
+
+from . import quickslurm as quickslurm  # re-export submodule
 
 __all__ = [
     "Slurm",
     "SlurmError",
     "SlurmCommandError",
-    "SlurmParseError",
     "CommandResult",
     "SubmitResult",
     "default_gpu_options",
     "__version__",
+    "quickslurm"
 ]
-
