@@ -1,9 +1,10 @@
 from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = version("quickslurm")  # keep in sync with [project].name
-except PackageNotFoundError:  # pragma: no cover
-    __version__ = "0.0.0"
+    from ._version import __version__
+except ImportError:
+    # Fallback for development installs
+    __version__ = "0.0.0+unknown"
 
 
 from .data import (
