@@ -64,6 +64,7 @@ include = [
 ]
 
 [tool.hatch.build.targets.wheel]
+packages = ["src/quickslurm"]
 # Explicitly include the version file
 artifacts = ["src/quickslurm/_version.py"]
 

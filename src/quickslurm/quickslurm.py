@@ -6,7 +6,7 @@ with robust subprocess handling.
 Usage:
     from quickslurm import Slurm, SlurmError
 
-    slurm = Slurm()  # or Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
+    slurm = Slurm() # or Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
 
     # Submit an existing script:
     sub = slurm.submit_batch(
@@ -19,37 +19,35 @@ Usage:
             "mem": "8G",
             "output": "slurm-%j.out",
         },
-        script_args=["--epochs", "10"]
-    )
+        script_args=["--epochs", "10"])
     print(sub.job_id)
 
     # Submit an inline command (auto-generates a temp script)
     sub2 = slurm.submit_inline(
         command=["python", "train.py", "--epochs", "5"],
-        sbatch_options={"time": "00:10:00", "job-name": "quick-train"},
-    )
+        sbatch_options={"time": "00:10:00", "job-name": "quick-train"})
 
     # Run something interactively via srun (within an allocation or for short tasks)
     res = slurm.run(["hostname"], srun_options={"ntasks": 1})
     print(res.stdout)
 """
 
-
-
 import logging
 import os
 import shlex
 import subprocess
 import tempfile
-from .data import SubmitResult, CommandResult
 from logging import Logger
 from pathlib import Path
-from typing import Dict, Mapping, Optional, Sequence, Union, List
+from typing import Mapping, Optional, Sequence, Union
+
+from .data import SubmitResult, CommandResult
 from .utils import (
     SlurmCommandError, SlurmError,
-    _build_flag_kv, _get_or_create_default_logger, 
-    _env_with, _parse_job_id, _slurm_wait, default_gpu_options
+    _build_flag_kv, _get_or_create_default_logger,
+    _env_with, _parse_job_id, _slurm_wait
 )
+
 
 # ----------------- Main class -----------------
 
@@ -65,14 +63,14 @@ class Slurm:
     ):
         """
         Args:
-            sbatch_path: Path to sbatch binary.
-            srun_path: Path to srun binary.
-            default_timeout: Default timeout (seconds) for subprocess runs.
-            base_env: Environment variables applied to every call.
+            sbatch_path: Path to sbatch binary. The default is "sbatch".
+            srun_path: Path to srun binary. The default is "srun".
+            default_timeout: Default timeout (seconds) for subprocess runs. The default is None.
+            base_env: Environment variables applied to every call. The default is None. Passed as a dict if used.
             enable_logging:
                 - True: use the built-in logger (file in CWD, fallback /tmp, plus stderr).
                 - False: use a NullHandler (silent).
-                - logging.Logger: use the provided logger as-is.
+                - logging.Logger object: use the provided logger. Note: this is only a log for the quickslurm module.
         """
         self.sbatch_path = sbatch_path
         self.srun_path = srun_path
@@ -81,7 +79,7 @@ class Slurm:
 
         if isinstance(enable_logging, logging.Logger):
             self.logger = enable_logging
-        elif enable_logging is True:
+        elif enable_logging:
             self.logger = _get_or_create_default_logger()
         else:
             self.logger = logging.getLogger("quickslurm.null")
@@ -203,7 +201,7 @@ class Slurm:
             timeout: Optional[float] = None,
             check: bool = True,
             input_text: Optional[str] = None,
-            wait: bool= False
+            wait: bool = False
     ) -> CommandResult:
         merged_env = self.base_env.copy()
         if env:
@@ -251,6 +249,3 @@ class Slurm:
             )
 
         return result
-
-
-
