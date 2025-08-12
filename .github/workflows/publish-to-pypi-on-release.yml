@@ -32,7 +32,7 @@ jobs:
           python -m build
       - name: Check version file
         run: |
-          python -c "import hatch_vcs; print('hatch-vcs version:', hatch_vcs.__version__)"
+          ls -la src/quickslurm/
           find . -name "_version.py" -exec cat {} \;
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.10.3
