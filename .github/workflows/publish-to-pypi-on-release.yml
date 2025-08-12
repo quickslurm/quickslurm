@@ -20,11 +20,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Debug git state
-        run: |
-          git describe --tags --dirty
-          git log --oneline -5
-          ls -la src/quickslurm/
       - name: Build sdist/wheel
         run: |
           python -m pip install --upgrade pip
