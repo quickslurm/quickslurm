@@ -32,7 +32,6 @@ from .quickslurm import (
     SlurmCommandError,
     CommandResult,
     SubmitResult,
-    default_gpu_options,
 )
 
 from . import quickslurm as quickslurm  # re-export submodule
