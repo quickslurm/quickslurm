@@ -1,0 +1,36 @@
+site_name: quickslurm
+site_url: https://JayQuimby.github.io/quickslurm/
+repo_url: https://github.com/JayQuimby/quickslurm
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.top
+nav:
+  - Home: index.md
+  - API:
+    - quickslurm: api/quickslurm.md
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_style: google         # or "numpy"
+            show_source: true
+            show_root_full_path: false
+            show_submodules: true
+            separate_signature: true
+            inherited_members: true
+            members_order: source
+            merge_init_into_class: true
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
