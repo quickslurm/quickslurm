@@ -15,6 +15,8 @@ class CommandResult:
 @dataclass(frozen=True)
 class SubmitResult:
     job_id: int
+    state: str
+    returncode: int
     stdout: str
     stderr: str
     args: List[str]
