@@ -1,0 +1,68 @@
+name: Slurm integration test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  slurm-integration:
+    runs-on: ubuntu-24.04
+    services:
+      docker:
+        image: docker:27-dind
+        options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Docker Compose CLI
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Start Slurm cluster
+        working-directory: docker
+        run: |
+          docker compose up -d
+          # wait for slurmctld to be ready
+          for i in {1..60}; do
+            if docker compose exec -T controller sinfo; then break; fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose exec -T controller sinfo
+          docker compose exec -T controller scontrol show nodes
+
+      - name: Install test deps into controller
+        working-directory: docker
+        run: |
+          # mount your repo folder into controller or pip install from source
+          docker compose cp .. controller:/workspace
+          docker compose exec -T controller bash -lc "
+            python3 -m pip install -U pip wheel
+            python3 -m pip install -e /workspace[tests]
+          "
+
+      - name: Run pytest (calls sbatch/srun)
+        working-directory: docker
+        env:
+          PYTEST_ADDOPTS: "-q"
+        run: |
+          docker compose exec -T controller bash -lc "
+            export SLURM_CONF=/etc/slurm/slurm.conf
+            # quick smoke tests that actually schedule work
+            sinfo && squeue
+            # run your suite
+            pytest /workspace/tests/test_slurm_integration.py
+          "
+
+      - name: Teardown
+        if: always()
+        working-directory: docker
+        run: docker compose down -v

@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  controller:
+    image: ghcr.io/giovtorres/slurm-docker-cluster:latest
+    container_name: controller
+    hostname: controller
+    privileged: true
+    # Mount your repo into /workspace so pytest can see your code/tests
+    # (In CI, you can also `docker compose cp` if you prefer.)
+    volumes:
+      - ..:/workspace
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "sinfo"]
+      interval: 3s
+      timeout: 2s
+      retries: 40
+
+  c1:
+    image: ghcr.io/giovtorres/slurm-docker-cluster:latest
+    container_name: c1
+    hostname: c1
+    privileged: true
+    depends_on:
+      - controller
