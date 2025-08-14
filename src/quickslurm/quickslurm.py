@@ -9,7 +9,7 @@ Usage:
     slurm = Slurm() # or Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
 
     # Submit an existing script:
-    sub = slurm.submit_batch(
+    sub = slurm.sbatch(
         script_path="train.sh",
         sbatch_options={
             "job-name": "trainA",
@@ -28,7 +28,7 @@ Usage:
         sbatch_options={"time": "00:10:00", "job-name": "quick-train"})
 
     # Run something interactively via srun (within an allocation or for short tasks)
-    res = slurm.run(["hostname"], srun_options={"ntasks": 1})
+    res = slurm.srun(["hostname"], srun_options={"ntasks": 1})
     print(res.stdout)
 """
 
@@ -45,7 +45,7 @@ from .data import SubmitResult, CommandResult
 from .utils import (
     SlurmCommandError, SlurmError,
     _build_flag_kv, _get_or_create_default_logger,
-    _env_with, _parse_job_id, _slurm_wait
+    _env_with, _parse_job_id, _slurm_wait, _parse_result
 )
 
 
@@ -54,12 +54,12 @@ from .utils import (
 class Slurm:
     def __init__(
             self,
-            *,
             sbatch_path: str = "sbatch",
             srun_path: str = "srun",
             default_timeout: Optional[float] = None,
             base_env: Optional[Mapping[str, str]] = None,
             enable_logging: Union[bool, Logger] = False,
+            config_file_path: str = 'quickslurm.cfg',
     ):
         """
         Args:
@@ -71,14 +71,21 @@ class Slurm:
                 - True: use the built-in logger (file in CWD, fallback /tmp, plus stderr).
                 - False: use a NullHandler (silent).
                 - logging.Logger object: use the provided logger. Note: this is only a log for the quickslurm module.
+            config_file_path: quick slurm config file. "quickslurm.cfg" by default. (More in README)
+                - this file can contain all of the key value pair 
         """
         self.sbatch_path = sbatch_path
         self.srun_path = srun_path
         self.default_timeout = default_timeout
         self.base_env = _env_with(base_env)
 
+        # read defualt config in 
+        from .utils import read_cfg_file
+        conf_path = config_file_path if Path(config_file_path).exists() else None
+        self.quick_config = read_cfg_file(conf_path) if conf_path else {}
+
         if isinstance(enable_logging, logging.Logger):
-            self.logger = enable_logging
+            self.logger = enable_logging #logging.getLogger(f"{enable_logging.name}.quickslurm")
         elif enable_logging:
             self.logger = _get_or_create_default_logger()
         else:
@@ -89,15 +96,14 @@ class Slurm:
 
     # ---------- Public API ----------
 
-    def submit_batch(
+    def sbatch(
             self,
-            *,
             script_path: Union[str, Path],
-            sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             script_args: Optional[Sequence[str]] = None,
+            sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
-            wait: bool = False,
+            wait: bool = True,
     ) -> SubmitResult:
         """
         Submit an existing batch script via sbatch.
@@ -117,14 +123,13 @@ class Slurm:
 
     def submit_inline(
             self,
-            *,
             command: Sequence[str],
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             shebang: str = "#!/bin/bash -l",
             workdir: Optional[Union[str, Path]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
-            wait: bool = False,
+            wait: bool = True,
     ) -> SubmitResult:
         """
         Generate a temporary script containing `command` and submit it via sbatch.
@@ -142,10 +147,10 @@ class Slurm:
 
         try:
             Path(tf_path).chmod(0o755)
-            return self.submit_batch(
+            return self.sbatch(
                 script_path=tf_path,
-                sbatch_options=sbatch_options,
                 script_args=None,
+                sbatch_options=sbatch_options,
                 extra_env=extra_env,
                 timeout=timeout,
                 wait=wait
@@ -156,15 +161,14 @@ class Slurm:
             except OSError:
                 pass
 
-    def run(
+    def srun(
             self,
             command: Sequence[str],
-            *,
             srun_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
             check: bool = True,
-            wait: bool = False,
+            wait: bool = True,
     ) -> CommandResult:
         """
         Run a command via srun (non-interactive).
@@ -176,10 +180,9 @@ class Slurm:
 
         return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait)
 
-    def cancel(
+    def scancel(
             self,
             job_id: Union[int, str],
-            *,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
             scancel_path: str = "scancel",
@@ -201,7 +204,7 @@ class Slurm:
             timeout: Optional[float] = None,
             check: bool = True,
             input_text: Optional[str] = None,
-            wait: bool = False
+            wait: bool = True
     ) -> CommandResult:
         merged_env = self.base_env.copy()
         if env:
@@ -219,35 +222,50 @@ class Slurm:
                 timeout=timeout if timeout is not None else self.default_timeout,
                 check=False,
             )
-            job_id = _parse_job_id(cp.stdout)
-            if wait:
-                _slurm_wait(job_id)
         except subprocess.TimeoutExpired as e:
             self.logger.error("[Slurm] Timeout after %ss", (timeout or self.default_timeout))
             raise SlurmCommandError(
                 f"Command timed out after {timeout or self.default_timeout}s: {args}",
                 CommandResult(-1, e.stdout or "", e.stderr or f"TimeoutExpired: {e}", list(map(str, args))),
             ) from e
+        
         except FileNotFoundError as e:
             self.logger.error("[Slurm] Command not found: %s", args[0])
             raise SlurmError(f"Command not found: {args[0]!r}. Is Slurm on PATH?") from e
+        
         except Exception as e:
             self.logger.error("[Slurm] Unexpected error: %s", e)
             raise
 
-        from .utils import _check_exit
-        result = CommandResult(_check_exit(job_id), cp.stdout, cp.stderr, list(map(str, args)))
+        if cp.returncode != 0:
+            raise SlurmCommandError(
+                f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
+                result,
+            )
+
+        job_id = _parse_job_id(cp.stdout)
+        
+        if wait:
+            _slurm_wait(job_id)
+            exit_code, std_out, std_err = _parse_result(job_id)
+            result = CommandResult(
+                exit_code, 
+                std_out, 
+                std_err, 
+                list(map(str, args))
+            )
+        else:
+            result = CommandResult(
+                cp.returncode, 
+                cp.stdout, 
+                cp.stderr, 
+                list(map(str, args))
+            )
 
         self.logger.debug("[Slurm] Return code: %s", cp.returncode)
         if cp.stdout.strip():
             self.logger.debug("[Slurm] STDOUT:\n%s", cp.stdout.strip())
         if cp.stderr.strip():
             self.logger.debug("[Slurm] STDERR:\n%s", cp.stderr.strip())
-        print(result)
-        if check and result.returncode > 0:
-            raise SlurmCommandError(
-                f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
-                result,
-            )
 
         return result

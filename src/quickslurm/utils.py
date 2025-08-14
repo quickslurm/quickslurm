@@ -1,6 +1,8 @@
 import re
 import os
 import logging
+from time import sleep
+from subprocess import run, CalledProcessError
 from typing import  Mapping, Optional, Union, List, Dict
 from .data import CommandResult
 from pathlib import Path
@@ -91,10 +93,13 @@ def _get_or_create_default_logger() -> Logger:
     logger.info(f"[Slurm] Logging initialized at {log_path}")
     return logger
 
-def _slurm_wait(job_id) -> None:
-    import subprocess
-    from time import sleep
+def sacct_cmd(x, ops='JobID,State,ExitCode'):
+    return run(
+        f'sacct -j {x} --format={ops} --noheader', 
+        timeout=10, shell=True, capture_output=True, text=True
+    )
 
+def _slurm_wait(job_id) -> None:
     print(f'waiting for slurm job {job_id} to complete')
 
     if job_id == 0:
@@ -102,12 +107,7 @@ def _slurm_wait(job_id) -> None:
 
     while True:
         try:
-            res = subprocess.run(
-                ['sacct', '-j', job_id, '--format=State', '--noheader', '--parsable2'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            res = sacct_cmd(job_id)
 
             states = res.stdout.strip().split('\n')
             if not states or not states[0]:
@@ -121,22 +121,15 @@ def _slurm_wait(job_id) -> None:
             
             sleep(30)
 
-        except subprocess.CalledProcessError as e:
+        except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
 
-def _check_exit(job_id):
-    from time import sleep
-    sleep(15)
-
-    import subprocess
+def _parse_result(job_id):
     try:
-        res = subprocess.run(
-            f'sacct -j {job_id} --format=JobID,State,ExitCode --noheader', 
-            timeout=10, shell=True, capture_output=True, text=True
-        )
+        res = sacct_cmd(job_id, ops='JobID,State,ExitCode,StdOut,StdErr')
     except Exception as e:
-        print('Warning: Failed to check exit status of job!')
+        print(f'Warning: Failed to check exit status of job! {e}')
         return -1
     print(f'Check response: {res}')
     j_id, state, exit_code = res.stdout.strip().split()[:3]
@@ -172,3 +165,18 @@ def default_gpu_options(
         opts["cpus-per-task"] = cpus_per_task
     return opts
 
+def read_cfg_file(cfg_path):
+    """
+    Reads a .cfg file and returns all key-value pairs as a dictionary.
+    """
+    from configparser import ConfigParser
+    config = ConfigParser()
+    config.read(cfg_path)
+    
+    # Flatten into a single dict: { "section.key": value }
+    cfg_dict = {}
+    for section in config.sections():
+        if section == 'quickslurm':
+            cfg_dict = config.items(section)
+    
+    return cfg_dict
