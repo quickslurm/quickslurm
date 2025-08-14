@@ -89,11 +89,6 @@ class Slurm:
         self.default_timeout = default_timeout
         self.base_env = _env_with(base_env)
 
-        # read defualt config in 
-        from .utils import read_cfg_file
-        conf_path = config_file_path if Path(config_file_path).exists() else None
-        self.quick_config = read_cfg_file(conf_path) if conf_path else {}
-
         if isinstance(enable_logging, logging.Logger):
             self.logger = enable_logging #logging.getLogger(f"{enable_logging.name}.quickslurm")
         elif enable_logging:
@@ -174,9 +169,8 @@ class Slurm:
         cmd.append(str(script_path))
         cmd += [str(a) for a in script_args]
 
-        result = self._run(cmd, env=_env_with(extra_env), timeout=timeout, wait=wait)
-        job_id = _parse_job_id(result.stdout)
-        return SubmitResult(job_id=job_id, stdout=result.stdout, stderr=result.stderr, args=result.args)
+        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, wait=wait)
+
 
     def submit_inline(
             self,
@@ -272,7 +266,7 @@ class Slurm:
             timeout: Optional[float] = None,
             check: bool = True,
             wait: bool = True,
-    ) -> CommandResult:
+    ) -> SubmitResult:
         """
         Run a command via srun (non-interactive).
 
@@ -327,7 +321,7 @@ class Slurm:
             timeout: Optional[float] = None,
             scancel_path: str = "scancel",
             check: bool = True,
-    ) -> CommandResult:
+    ) -> SubmitResult:
         """
         Cancel a Slurm job by ID using scancel.
 
@@ -370,7 +364,7 @@ class Slurm:
             check: bool = True,
             input_text: Optional[str] = None,
             wait: bool = True
-    ) -> CommandResult:
+    ) -> SubmitResult:
         merged_env = self.base_env.copy()
         if env:
             merged_env.update(env)
@@ -403,39 +397,23 @@ class Slurm:
             raise
 
         if cp.returncode != 0:
-            raise SlurmCommandError(
-                f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
-                CommandResult(
-                    cp.returncode, 
-                    cp.stdout, 
-                    cp.stderr, 
-                    list(map(str, args))
-                ),
-            )
+            if check:
+                raise SlurmCommandError(
+                    f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
+                    CommandResult(cp.returncode, cp.stdout, cp.stderr, list(map(str, args))),
+                )
+            else:
+                return SubmitResult(00000, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
 
         job_id = _parse_job_id(cp.stdout)
         
         if wait:
             _slurm_wait(job_id)
-            exit_code, std_out, std_err = _parse_result(job_id)
-            result = CommandResult(
-                exit_code, 
-                std_out, 
-                std_err, 
-                list(map(str, args))
-            )
+            state, exit_code, std_out, std_err = _parse_result(job_id)
+            self.logger.debug(f"[Slurm] Return code: {exit_code}")
+            return SubmitResult(job_id, state, exit_code, std_out, std_err, list(map(str, args)))
+            
         else:
-            result = CommandResult(
-                cp.returncode, 
-                cp.stdout, 
-                cp.stderr, 
-                list(map(str, args))
-            )
+            self.logger.debug(f"[Subprocess] Return code: {cp.returncode}", )
+            return SubmitResult(job_id, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
 
-        self.logger.debug("[Slurm] Return code: %s", cp.returncode)
-        if cp.stdout.strip():
-            self.logger.debug("[Slurm] STDOUT:\n%s", cp.stdout.strip())
-        if cp.stderr.strip():
-            self.logger.debug("[Slurm] STDERR:\n%s", cp.stderr.strip())
-
-        return result

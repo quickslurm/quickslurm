@@ -127,20 +127,11 @@ def _slurm_wait(job_id) -> None:
 
 def _parse_result(job_id):
     try:
-        res = sacct_cmd(job_id, ops='JobID,State,ExitCode,StdOut,StdErr')
+        res = sacct_cmd(job_id, ops='State,ExitCode,StdOut,StdErr')
     except Exception as e:
         print(f'Warning: Failed to check exit status of job! {e}')
-        return -1
-    print(f'Check response: {res}')
-    j_id, state, exit_code = res.stdout.strip().split()[:3]
-    print(f'ID: {j_id} | State: {state} | Exit: {exit_code}')
-
-    if state == 'COMPLETED':
-        return 0
-    elif state == 'FAILED':
-        return 1
-    else: 
-        return 2
+        return "UNKNOWN", 0, 'UNKNOWN', 'UNKNOWN'
+    return res.stdout.strip().split()[:4]
 
 # ----------------- Convenience preset -----------------
 
@@ -165,18 +156,3 @@ def default_gpu_options(
         opts["cpus-per-task"] = cpus_per_task
     return opts
 
-def read_cfg_file(cfg_path):
-    """
-    Reads a .cfg file and returns all key-value pairs as a dictionary.
-    """
-    from configparser import ConfigParser
-    config = ConfigParser()
-    config.read(cfg_path)
-    
-    # Flatten into a single dict: { "section.key": value }
-    cfg_dict = {}
-    for section in config.sections():
-        if section == 'quickslurm':
-            cfg_dict = config.items(section)
-    
-    return cfg_dict
