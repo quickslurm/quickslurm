@@ -1,5 +1,7 @@
 
 
+
+
 # quickslurm
 A lightweight Python wrapper around Slurm for:
 
@@ -8,6 +10,8 @@ A lightweight Python wrapper around Slurm for:
 - Cancelling jobs (scancel)
 
 It focuses on safe subprocess handling, simple ergonomics, and sensible defaults.
+
+Full documentation can be found here: [quicklsurm docs](https://jayquimby.github.io/quickslurm/)
 
 ## Features
 
