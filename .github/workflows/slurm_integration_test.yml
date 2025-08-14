@@ -47,6 +47,7 @@ jobs:
             sleep 2
           done
           docker compose ps
+          docker compose exec -T controller ./register_cluster.sh
           docker compose exec -T controller sinfo
           docker compose exec -T controller scontrol show nodes
 
