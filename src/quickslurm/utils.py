@@ -125,6 +125,30 @@ def _slurm_wait(job_id) -> None:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
 
+def _check_exit(job_id):
+    from time import sleep
+    sleep(15)
+
+    import subprocess
+    try:
+        res = subprocess.run(
+            f'sacct -j {job_id} --format=JobID,State,ExitCode --noheader', 
+            timeout=10, shell=True, capture_output=True, text=True
+        )
+    except Exception as e:
+        print('Warning: Failed to check exit status of job!')
+        return -1
+    print(f'Check response: {res}')
+    j_id, state, exit_code = res.stdout.strip().split()[:3]
+    print(f'ID: {j_id} | State: {state} | Exit: {exit_code}')
+
+    if state == 'COMPLETED':
+        return 0
+    elif state == 'FAILED':
+        return 1
+    else: 
+        return 2
+
 # ----------------- Convenience preset -----------------
 
 def default_gpu_options(

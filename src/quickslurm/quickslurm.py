@@ -219,8 +219,9 @@ class Slurm:
                 timeout=timeout if timeout is not None else self.default_timeout,
                 check=False,
             )
+            job_id = _parse_job_id(cp.stdout)
             if wait:
-                _slurm_wait(_parse_job_id(cp.stdout))
+                _slurm_wait(job_id)
         except subprocess.TimeoutExpired as e:
             self.logger.error("[Slurm] Timeout after %ss", (timeout or self.default_timeout))
             raise SlurmCommandError(
@@ -234,7 +235,8 @@ class Slurm:
             self.logger.error("[Slurm] Unexpected error: %s", e)
             raise
 
-        result = CommandResult(cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
+        from .utils import _check_exit
+        result = CommandResult(_check_exit(job_id), cp.stdout, cp.stderr, list(map(str, args)))
 
         self.logger.debug("[Slurm] Return code: %s", cp.returncode)
         if cp.stdout.strip():
@@ -242,7 +244,7 @@ class Slurm:
         if cp.stderr.strip():
             self.logger.debug("[Slurm] STDERR:\n%s", cp.stderr.strip())
 
-        if check and cp.returncode != 0:
+        if check and cp.returncode > 0:
             raise SlurmCommandError(
                 f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
                 result,

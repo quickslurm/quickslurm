@@ -28,10 +28,10 @@ from .utils import (
 
 from .quickslurm import (
     Slurm,
-    SlurmError,
-    SlurmCommandError,
-    CommandResult,
-    SubmitResult,
+    # SlurmError,
+    # SlurmCommandError,
+    # CommandResult,
+    # SubmitResult,
 )
 
 from . import quickslurm as quickslurm  # re-export submodule
