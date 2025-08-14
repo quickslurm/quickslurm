@@ -1,13 +1,24 @@
 name: Generate docs for package
 
 on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "docs/**"
+      - "mkdocs.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "docs/**"
+      - "mkdocs.yml"
   release:
     types: [ published, edited ]  # fires when you publish or edit a GitHub Release
     paths:
       - "src/**"
       - "docs/**"
       - "mkdocs.yml"
-    workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read
