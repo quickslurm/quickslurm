@@ -4,11 +4,17 @@ A lightweight Slurm wrapper for submitting batch jobs (sbatch) and running tasks
 with robust subprocess handling.
 
 Usage:
+    # General initialization:
+    ```
     from quickslurm import Slurm, SlurmError
 
-    slurm = Slurm() # or Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
+    slurm = Slurm()
+    #or
+    slurm = Slurm(sbatch_path="/usr/bin/sbatch", srun_path="/usr/bin/srun")
+    ```
 
     # Submit an existing script:
+    ```
     sub = slurm.submit_batch(
         script_path="train.sh",
         sbatch_options={
@@ -21,8 +27,10 @@ Usage:
         },
         script_args=["--epochs", "10"])
     print(sub.job_id)
+    ```
 
     # Submit an inline command (auto-generates a temp script)
+    ```
     sub2 = slurm.submit_inline(
         command=["python", "train.py", "--epochs", "5"],
         sbatch_options={"time": "00:10:00", "job-name": "quick-train"})
@@ -30,7 +38,9 @@ Usage:
     # Run something interactively via srun (within an allocation or for short tasks)
     res = slurm.run(["hostname"], srun_options={"ntasks": 1})
     print(res.stdout)
+    ```
 """
+
 
 import logging
 import os
@@ -54,7 +64,6 @@ from .utils import (
 class Slurm:
     def __init__(
             self,
-            *,
             sbatch_path: str = "sbatch",
             srun_path: str = "srun",
             default_timeout: Optional[float] = None,
@@ -89,9 +98,8 @@ class Slurm:
 
     # ---------- Public API ----------
 
-    def submit_batch(
+    def sbatch(
             self,
-            *,
             script_path: Union[str, Path],
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             script_args: Optional[Sequence[str]] = None,
@@ -100,8 +108,55 @@ class Slurm:
             wait: bool = False,
     ) -> SubmitResult:
         """
-        Submit an existing batch script via sbatch.
+        Submit an existing Slurm batch script using sbatch.
+
+        This method builds and executes an sbatch command to submit the provided
+        script file. Additional sbatch flags can be specified via a mapping
+        (converted into --key=value or --flag style options), and positional
+        arguments for the script can be appended. On success, the parsed Slurm
+        job ID and raw command I/O are returned.
+
+        If wait is True, the call blocks until the submitted job reaches a
+        terminal state, and the resulting status is reflected in the returned
+        object.
+
+        Args:
+            script_path: Path to the batch script to submit.
+            script_args: Optional sequence of additional arguments passed to the script
+                after sbatch options.
+            sbatch_options: Optional mapping of sbatch options (e.g., {"time": "00:10:00",
+                "partition": "short", "cpus-per-task": 4}). Boolean values are treated
+                as flags (True -> present, False -> omitted).
+            extra_env: Optional environment variables to layer on top of the base
+                environment for this invocation.
+            timeout: Optional timeout in seconds for the underlying subprocess call.
+                Falls back to the instance default_timeout if not provided.
+            wait: If True, wait for the submitted job to finish before returning.
+
+        Returns:
+            SubmitResult: An object containing:
+                - job_id: The parsed Slurm job ID (int or str).
+                - stdout: Captured stdout from sbatch.
+                - stderr: Captured stderr from sbatch.
+                - args: The full command-line argument list that was executed.
+
+        Raises:
+            SlurmError: If the sbatch executable is not found or Slurm is not available.
+            SlurmCommandError: If the sbatch command fails or times out, or if the job
+                completes in an error state when wait=True.
+
+        Example:
+            ```
+            slurm = Slurm()
+            res = slurm.submit_batch(
+                 script_path="train.sh",
+                 script_args=["--epochs", "5"],
+                 sbatch_options={"job-name": "trainA", "time": "00:30:00"},
+            )
+            print(res.job_id)
+            ```
         """
+
         if script_args is None:
             script_args = []
 
@@ -117,7 +172,6 @@ class Slurm:
 
     def submit_inline(
             self,
-            *,
             command: Sequence[str],
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             shebang: str = "#!/bin/bash -l",
@@ -127,8 +181,54 @@ class Slurm:
             wait: bool = False,
     ) -> SubmitResult:
         """
-        Generate a temporary script containing `command` and submit it via sbatch.
+        Submit an inline command by generating a temporary sbatch script.
+
+        This method creates a temporary shell script that:
+        - Starts with the provided shebang.
+        - Enables strict bash options (set -euo pipefail).
+        - Optionally changes to the specified working directory.
+        - Executes the given command (safely quoted).
+
+        The temporary script is made executable, submitted via sbatch with the
+        provided options, and then cleaned up. On success, the parsed job ID
+        and captured I/O from the sbatch invocation are returned. If wait is
+        True, the call blocks until the job reaches a terminal state.
+
+        Args:
+            command: The program and its arguments to run (e.g., ["python", "train.py", "--epochs", "5"]).
+            sbatch_options: Optional mapping of sbatch options (e.g., {"time": "00:10:00", "partition": "short"}).
+                Boolean values are treated as flags (True -> present, False -> omitted).
+            shebang: Script interpreter line to place at the top of the generated script.
+                Defaults to "#!/bin/bash -l".
+            workdir: If provided, inserts a `cd` to this directory before running the command.
+            extra_env: Environment variables layered on top of the instance base environment for this submission.
+            timeout: Timeout in seconds for the underlying subprocess call. Falls back to the instance
+                default if not provided.
+            wait: If True, wait for the submitted job to finish before returning.
+
+        Returns:
+            SubmitResult: Contains:
+                - job_id: The parsed Slurm job ID.
+                - stdout: Captured stdout from sbatch.
+                - stderr: Captured stderr from sbatch.
+                - args: The executed command-line arguments.
+
+        Raises:
+            SlurmError: If the sbatch executable is not found or Slurm is unavailable.
+            SlurmCommandError: If submission fails, times out, or the job completes in an error
+                state when wait=True.
+
+        Example:
+            ```
+            slurm = Slurm()
+            sub = slurm.submit_inline(
+                command=["python", "train.py", "--epochs", "5"],
+                sbatch_options={"time": "00:10:00", "job-name": "quick-train"},
+            )
+            print(sub.job_id)
+            ```
         """
+
         cmd_line = " ".join(shlex.quote(str(c)) for c in command)
         parts = [shebang, "set -euo pipefail"]
         if workdir:
@@ -142,7 +242,7 @@ class Slurm:
 
         try:
             Path(tf_path).chmod(0o755)
-            return self.submit_batch(
+            return self.sbatch(
                 script_path=tf_path,
                 sbatch_options=sbatch_options,
                 script_args=None,
@@ -156,10 +256,9 @@ class Slurm:
             except OSError:
                 pass
 
-    def run(
+    def srun(
             self,
             command: Sequence[str],
-            *,
             srun_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
@@ -168,6 +267,43 @@ class Slurm:
     ) -> CommandResult:
         """
         Run a command via srun (non-interactive).
+
+        Builds and executes an srun command using the provided options and command
+        arguments. Environment variables can be layered on top of the instance base
+        environment. By default, a non-zero exit code raises SlurmCommandError unless
+        check is set to False.
+
+        If wait is True, the method attempts to wait for the underlying Slurm job to
+        finish when a job ID can be determined; otherwise, it returns immediately after
+        the srun process completes.
+
+        Args:
+            command: Sequence of the program and its arguments to run via srun.
+            srun_options: Optional mapping of srun options. Keys are normalized
+                (underscores -> dashes) and values are converted to flags:
+                - bool True => "--key" (flag present)
+                - bool False => omitted
+                - other types => "--key=value"
+            extra_env: Optional environment variables to merge on top of the instance
+                base environment for this call.
+            timeout: Optional timeout in seconds for the subprocess call. Falls back to
+                the instance default if not provided.
+            check: If True (default), raise SlurmCommandError when the command exits
+                with a non-zero status.
+            wait: If True, attempt to wait for the job to reach a terminal state when a
+                job ID can be parsed.
+
+        Returns:
+            CommandResult: Contains:
+                - returncode: Process exit code.
+                - stdout: Captured standard output.
+                - stderr: Captured standard error.
+                - args: The executed command-line arguments.
+
+        Raises:
+            SlurmError: If the srun executable is not found or Slurm is unavailable.
+            SlurmCommandError: If the command fails, times out, or completes in an
+                error state when check=True (or when wait=True and a terminal error is detected).
         """
         cmd = [self.srun_path]
         if srun_options:
@@ -176,17 +312,41 @@ class Slurm:
 
         return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait)
 
-    def cancel(
+    def scancel(
             self,
             job_id: Union[int, str],
-            *,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
             scancel_path: str = "scancel",
             check: bool = True,
     ) -> CommandResult:
         """
-        Cancel a job by id using scancel.
+        Cancel a Slurm job by ID using scancel.
+
+        Constructs and runs an scancel command to cancel the specified job. Environment
+        overrides and a timeout can be supplied. By default, a non-zero exit code raises
+        SlurmCommandError unless check is set to False.
+
+        Args:
+            job_id: The Slurm job identifier to cancel.
+            extra_env: Optional environment variables merged on top of the instance
+                base environment for this call.
+            timeout: Optional timeout in seconds for the subprocess call. Falls back to
+                the instance default if not provided.
+            scancel_path: Path to the scancel executable. Defaults to "scancel".
+            check: If True (default), raise SlurmCommandError when scancel exits
+                with a non-zero status.
+
+        Returns:
+            CommandResult: Contains:
+                - returncode: Process exit code.
+                - stdout: Captured standard output.
+                - stderr: Captured standard error.
+                - args: The executed command-line arguments.
+
+        Raises:
+            SlurmError: If the scancel executable is not found or Slurm is unavailable.
+            SlurmCommandError: If the scancel command fails or times out when check=True.
         """
         cmd = [scancel_path, str(job_id)]
         return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check)
