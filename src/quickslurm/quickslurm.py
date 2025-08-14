@@ -243,8 +243,8 @@ class Slurm:
             self.logger.debug("[Slurm] STDOUT:\n%s", cp.stdout.strip())
         if cp.stderr.strip():
             self.logger.debug("[Slurm] STDERR:\n%s", cp.stderr.strip())
-
-        if check and cp.returncode > 0:
+        print(result)
+        if check and result.returncode > 0:
             raise SlurmCommandError(
                 f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
                 result,
