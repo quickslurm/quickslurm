@@ -1,5 +1,4 @@
-name: Generate docs for package
-
+name: Generate Docs
 on:
   push:
     branches: [ "main" ]
