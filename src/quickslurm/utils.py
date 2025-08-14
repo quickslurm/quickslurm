@@ -20,6 +20,10 @@ class SlurmCommandError(SlurmError):
         self.result = result
 
 
+class SlurmParseError(SlurmError):
+    pass
+
+
 # ----------------- Helpers -----------------
 _JOB_ID_RE = re.compile(r"Submitted batch job\s+(\d+)")
 
