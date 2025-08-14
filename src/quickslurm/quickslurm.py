@@ -405,7 +405,12 @@ class Slurm:
         if cp.returncode != 0:
             raise SlurmCommandError(
                 f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
-                result,
+                CommandResult(
+                    cp.returncode, 
+                    cp.stdout, 
+                    cp.stderr, 
+                    list(map(str, args))
+                ),
             )
 
         job_id = _parse_job_id(cp.stdout)
