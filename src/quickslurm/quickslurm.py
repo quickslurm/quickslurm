@@ -98,7 +98,7 @@ class Slurm:
 
     # ---------- Public API ----------
 
-    def submit_batch(
+    def sbatch(
             self,
             script_path: Union[str, Path],
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
@@ -242,7 +242,7 @@ class Slurm:
 
         try:
             Path(tf_path).chmod(0o755)
-            return self.submit_batch(
+            return self.sbatch(
                 script_path=tf_path,
                 sbatch_options=sbatch_options,
                 script_args=None,
