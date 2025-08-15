@@ -93,11 +93,13 @@ def _get_or_create_default_logger() -> Logger:
     logger.info(f"[Slurm] Logging initialized at {log_path}")
     return logger
 
-def sacct_cmd(x, ops='JobID,State,ExitCode'):
+def _sacct_cmd(x, ops='JobID,State,ExitCode'):
     return run(
-        f'sacct -j {x} --format={ops} --noheader', 
+        f'sacct -j {x} --format={ops} --noheader --parsable2', 
         timeout=10, shell=True, capture_output=True, text=True
     )
+
+sacct_format = lambda x: x.strip().split('\n')[0].strip().split('|')
 
 def _slurm_wait(job_id) -> None:
     print(f'waiting for slurm job {job_id} to complete')
@@ -107,19 +109,19 @@ def _slurm_wait(job_id) -> None:
 
     while True:
         try:
-            res = sacct_cmd(job_id)
+            res = _sacct_cmd(job_id, 'JobID,State')
 
             states = res.stdout.strip().split('\n')
-            if not states or not states[0]:
+            if not states:
                 sleep(10)
                 continue
         
-            job_state = states[0].split('|')[0]
+            job_state = sacct_format(res.stdout)[1]
             if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
             
-            sleep(30)
+            sleep(10)
 
         except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
@@ -127,11 +129,11 @@ def _slurm_wait(job_id) -> None:
 
 def _parse_result(job_id):
     try:
-        res = sacct_cmd(job_id, ops='State,ExitCode,StdOut,StdErr')
+        res = _sacct_cmd(job_id, ops='State,ExitCode,StdOut,StdErr')
     except Exception as e:
         print(f'Warning: Failed to check exit status of job! {e}')
         return "UNKNOWN", 0, 'UNKNOWN', 'UNKNOWN'
-    return res.stdout.strip().split()[:4]
+    return sacct_format(res.stdout)[:4]
 
 # ----------------- Convenience preset -----------------
 
