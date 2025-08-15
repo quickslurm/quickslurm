@@ -107,19 +107,19 @@ def _slurm_wait(job_id) -> None:
 
     while True:
         try:
-            res = sacct_cmd(job_id)
+            res = sacct_cmd(job_id, 'JobID,State')
 
             states = res.stdout.strip().split('\n')
             if not states or not states[0]:
                 sleep(10)
                 continue
         
-            job_state = states[0].split('|')[0]
+            job_state = states[0].strip().split()[1]
             if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
             
-            sleep(30)
+            sleep(10)
 
         except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
