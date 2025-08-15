@@ -40,6 +40,10 @@ jobs:
         with:
           path: ./site
   deploy:
+    # Only deploy on release events or on pushes to main (i.e., merges to main).
+    if: >
+      github.event_name == 'release' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: build
     runs-on: ubuntu-latest
     environment:
