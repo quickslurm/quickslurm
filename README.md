@@ -1,7 +1,3 @@
-
-
-
-
 # quickslurm
 A lightweight Python wrapper around Slurm for:
 
@@ -11,7 +7,7 @@ A lightweight Python wrapper around Slurm for:
 
 It focuses on safe subprocess handling, simple ergonomics, and sensible defaults.
 
-Full documentation can be found here: [quickslurm docs](https://jayquimby.github.io/quickslurm/)
+Full documentation can be found here: [quickslurm docs](https://quickslurm.github.io/quickslurm/)
 
 ## Features
 
