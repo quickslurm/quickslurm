@@ -108,6 +108,7 @@ class Slurm:
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
+            check: bool = True,
             wait: bool = True,
     ) -> SubmitResult:
         """the 
@@ -137,6 +138,7 @@ class Slurm:
                 environment for this invocation.
             timeout: Optional timeout in seconds for the underlying subprocess call.
                 Falls back to the instance default_timeout if not provided.
+            check: If True (default), raises SlurmCommandError on non-zero exit codes for calling subprocess.
             wait: If True, wait for the submitted job to finish before returning.
 
         Returns:
@@ -174,7 +176,7 @@ class Slurm:
         cmd.append(str(script_path))
         cmd += [str(a) for a in script_args]
 
-        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, wait=wait)
+        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait)
 
 
     def submit_inline(
@@ -185,6 +187,7 @@ class Slurm:
             workdir: Optional[Union[str, Path]] = None,
             extra_env: Optional[Mapping[str, str]] = None,
             timeout: Optional[float] = None,
+            check: bool = True,
             wait: bool = True,
     ) -> SubmitResult:
         """
@@ -211,6 +214,7 @@ class Slurm:
             extra_env: Environment variables layered on top of the instance base environment for this submission.
             timeout: Timeout in seconds for the underlying subprocess call. Falls back to the instance
                 default if not provided.
+            check: If True (default), raises SlurmCommandError on non-zero exit codes for calling subprocess.
             wait: If True, wait for the submitted job to finish before returning.
 
         Returns:
@@ -255,6 +259,7 @@ class Slurm:
                 sbatch_options=sbatch_options,
                 extra_env=extra_env,
                 timeout=timeout,
+                check=check,
                 wait=wait
             )
         finally:
