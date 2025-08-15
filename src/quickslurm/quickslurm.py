@@ -110,7 +110,7 @@ class Slurm:
             timeout: Optional[float] = None,
             wait: bool = True,
     ) -> SubmitResult:
-        """
+        """the 
         Submit an existing Slurm batch script using sbatch.
 
         This method builds and executes an sbatch command to submit the provided
@@ -122,6 +122,9 @@ class Slurm:
         If wait is True, the call blocks until the submitted job reaches a
         terminal state, and the resulting status is reflected in the returned
         object.
+
+        If wait is False, the method will return a dummy `SubmitResult` object with
+        the std_out and std_err of the calling subprocess, and the state will be 'UNKNOWN'.
 
         Args:
             script_path: Path to the batch script to submit.
@@ -139,6 +142,8 @@ class Slurm:
         Returns:
             SubmitResult: An object containing:
                 - job_id: The parsed Slurm job ID (int or str).
+                - state: The state of the job if wait=True, otherwise 'UNKNOWN'.
+                - returncode: The exit code of the sbatch command if wait = True, otherwise subprocess return code.
                 - stdout: Captured stdout from sbatch.
                 - stderr: Captured stderr from sbatch.
                 - args: The full command-line argument list that was executed.
@@ -151,7 +156,7 @@ class Slurm:
         Example:
             ```
             slurm = Slurm()
-            res = slurm.submit_batch(
+            res = slurm.sbatch(
                  script_path="train.sh",
                  script_args=["--epochs", "5"],
                  sbatch_options={"job-name": "trainA", "time": "00:30:00"},
