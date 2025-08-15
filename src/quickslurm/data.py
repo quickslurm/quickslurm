@@ -12,14 +12,13 @@ class CommandResult:
     args: List[str]
 
 submit_result_template = """
-SubmitResult(
-    job_id={id}, 
-    state={state}, 
-    returncode={code}, 
-    stdout={out}, 
-    stderr={err}, 
-    args={args})
-)
+SubmitResult:
+    job_id: {id}
+    state: {state}
+    returncode: {code}
+    stdout: {out}
+    stderr: {err}
+    args: {args}
 """
 
 @dataclass(frozen=True)
@@ -58,4 +57,4 @@ class SubmitResult:
             else:
                 rc = rc if rc is not None else 0
         
-        return self.job_id, self.state, rc
+        return int(self.job_id), self.state, rc
