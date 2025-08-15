@@ -57,4 +57,4 @@ class SubmitResult:
             else:
                 rc = rc if rc is not None else 0
         
-        return self.job_id, self.state, rc
+        return int(self.job_id), self.state, rc
