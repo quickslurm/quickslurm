@@ -1,8 +1,13 @@
-
-
-
-
 # quickslurm
+[![Lint/Test](https://github.com/quickslurm/quickslurm/actions/workflows/lint-and-pytest.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/lint-and-pytest.yml)
+[![Build/Publish](https://github.com/quickslurm/quickslurm/actions/workflows/build-and-publish-to-pypi.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/build-and-publish-to-pypi.yml.yml)
+[![Docs](https://github.com/quickslurm/quickslurm/actions/workflows/generate-docs.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/generate-docs.yml)
+
+[![PyPI](https://img.shields.io/pypi/v/quickslurm)](https://pypi.org/project/quickslurm/)
+[![Python versions](https://img.shields.io/pypi/pyversions/quickslurm)](https://pypi.org/project/quickslurm/)
+[![License](https://img.shields.io/github/license/quickslurm/quickslurm)](https://github.com/quickslurm/quickslurm/blob/main/LICENSE)
+
+
 A lightweight Python wrapper around Slurm for:
 
 - Submitting batch jobs (sbatch)
@@ -11,7 +16,7 @@ A lightweight Python wrapper around Slurm for:
 
 It focuses on safe subprocess handling, simple ergonomics, and sensible defaults.
 
-Full documentation can be found here: [quickslurm docs](https://jayquimby.github.io/quickslurm/)
+Full documentation can be found here: [Quickslurm Docs](https://quickslurm.github.io/quickslurm/)
 
 ## Features
 
