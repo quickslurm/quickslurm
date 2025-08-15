@@ -15,7 +15,7 @@ authors = [
 ]
 keywords = ["slurm", "sbatch", "srun", "hpc", "cluster", "wrapper", "quickslurm", "quick"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
@@ -37,6 +37,13 @@ dependencies = []
 test = [
     "pytest>=7.0",
     "pytest-cov>=4.0"
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "pymdown-extensions",
+    "mkdocs-include-markdown-plugin"
 ]
 
 [project.urls]
@@ -69,7 +76,7 @@ packages = ["src/quickslurm"]
 artifacts = ["src/quickslurm/_version.py"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "README.md", "LICENSE", "tests"]
+include = ["src", "README.md", "LICENSE", "tests", "docs"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"

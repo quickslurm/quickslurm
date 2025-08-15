@@ -1,6 +1,6 @@
 site_name: quickslurm
-site_url: https://JayQuimby.github.io/quickslurm/
-repo_url: https://github.com/JayQuimby/quickslurm
+site_url: https://quickslurm.github.io/quickslurm/
+repo_url: https://github.com/quickslurm/quickslurm
 theme:
   name: material
   features:
@@ -13,6 +13,7 @@ nav:
     - quickslurm: api/quickslurm.md
 
 plugins:
+  - include-markdown
   - mkdocstrings:
       default_handler: python
       handlers:
