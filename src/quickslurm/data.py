@@ -12,14 +12,13 @@ class CommandResult:
     args: List[str]
 
 submit_result_template = """
-SubmitResult(
-    job_id={id}, 
-    state={state}, 
-    returncode={code}, 
-    stdout={out}, 
-    stderr={err}, 
-    args={args})
-)
+SubmitResult:
+    job_id: {id}
+    state: {state}
+    returncode: {code}
+    stdout: {out}
+    stderr: {err}
+    args: {args}
 """
 
 @dataclass(frozen=True)
