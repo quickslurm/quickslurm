@@ -95,7 +95,7 @@ def _get_or_create_default_logger() -> Logger:
 
 def sacct_cmd(x, ops='JobID,State,ExitCode'):
     return run(
-        f'sacct -j {x} --format={ops} --noheader', 
+        f'sacct -j {x} --format={ops} --noheader --parsable2', 
         timeout=10, shell=True, capture_output=True, text=True
     )
 
@@ -114,7 +114,7 @@ def _slurm_wait(job_id) -> None:
                 sleep(10)
                 continue
         
-            job_state = states[0].strip().split()[1]
+            job_state = states[0].strip().split('|')[1]
             if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
@@ -131,7 +131,7 @@ def _parse_result(job_id):
     except Exception as e:
         print(f'Warning: Failed to check exit status of job! {e}')
         return "UNKNOWN", 0, 'UNKNOWN', 'UNKNOWN'
-    return res.stdout.strip().split()[:4]
+    return res.stdout.strip().split('|')[:4]
 
 # ----------------- Convenience preset -----------------
 
