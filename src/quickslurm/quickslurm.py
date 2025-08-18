@@ -41,7 +41,6 @@ Usage:
     ```
 """
 
-
 import logging
 import os
 import shlex
@@ -90,7 +89,7 @@ class Slurm:
         self.base_env = _env_with(base_env)
 
         if isinstance(enable_logging, logging.Logger):
-            self.logger = enable_logging #logging.getLogger(f"{enable_logging.name}.quickslurm")
+            self.logger = enable_logging  # logging.getLogger(f"{enable_logging.name}.quickslurm")
         elif enable_logging:
             self.logger = _get_or_create_default_logger()
         else:
@@ -111,7 +110,7 @@ class Slurm:
             check: bool = True,
             wait: bool = True,
     ) -> SubmitResult:
-        """the 
+        """
         Submit an existing Slurm batch script using sbatch.
 
         This method builds and executes an sbatch command to submit the provided
@@ -177,7 +176,6 @@ class Slurm:
         cmd += [str(a) for a in script_args]
 
         return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait)
-
 
     def submit_inline(
             self,
@@ -397,11 +395,11 @@ class Slurm:
                 f"Command timed out after {timeout or self.default_timeout}s: {args}",
                 CommandResult(-1, e.stdout or "", e.stderr or f"TimeoutExpired: {e}", list(map(str, args))),
             ) from e
-        
+
         except FileNotFoundError as e:
             self.logger.error("[Slurm] Command not found: %s", args[0])
             raise SlurmError(f"Command not found: {args[0]!r}. Is Slurm on PATH?") from e
-        
+
         except Exception as e:
             self.logger.error("[Slurm] Unexpected error: %s", e)
             raise
@@ -416,14 +414,13 @@ class Slurm:
                 return SubmitResult(00000, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
 
         job_id = _parse_job_id(cp.stdout)
-        
+
         if wait:
             _slurm_wait(job_id)
             state, exit_code, std_out, std_err = _parse_result(job_id)
             self.logger.debug(f"[Slurm] Return code: {exit_code}")
             return SubmitResult(job_id, state, exit_code, std_out, std_err, list(map(str, args)))
-            
+
         else:
             self.logger.debug(f"[Subprocess] Return code: {cp.returncode}", )
             return SubmitResult(job_id, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
-

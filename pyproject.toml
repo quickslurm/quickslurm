@@ -47,9 +47,9 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JayQuimby/quickslurm"
-Repository = "https://github.com/JayQuimby/quickslurm"
-Issues = "https://github.com/JayQuimby/quickslurm/issues"
+Homepage = "https://github.com/quickslurm/quickslurm"
+Repository = "https://github.com/quickslurm/quickslurm"
+Issues = "https://github.com/quickslurm/quickslurm/issues"
 
 [tool.hatch.version]
 source = "vcs"
