@@ -11,6 +11,7 @@ class CommandResult:
     stderr: str
     args: List[str]
 
+
 submit_result_template = """
 SubmitResult:
     job_id: {id}
@@ -20,6 +21,7 @@ SubmitResult:
     stderr: {err}
     args: {args}
 """
+
 
 @dataclass(frozen=True)
 class SubmitResult:
@@ -39,15 +41,15 @@ class SubmitResult:
             err=self.stderr,
             args=self.args
         )
-    
+
     def __eq__(self, other):
-        return isinstance(other, SubmitResult) and self.job_id == other.job_id 
-    
+        return isinstance(other, SubmitResult) and self.job_id == other.job_id
+
     def __call__(self):
         # easy access to process return code
         rc = None
         if isinstance(self.returncode, int):
-            rc = self.returncode  
+            rc = self.returncode
         elif isinstance(self.returncode, str):
             if ':' in self.returncode:
                 # handle cases like "0:0" or "1:0"
@@ -56,5 +58,5 @@ class SubmitResult:
                 rc = int(self.returncode)
             else:
                 rc = rc if rc is not None else 0
-        
+
         return int(self.job_id), self.state, rc

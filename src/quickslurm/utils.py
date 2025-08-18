@@ -1,13 +1,16 @@
-import re
-import os
 import logging
-from time import sleep
-from subprocess import run, CalledProcessError
-from typing import  Mapping, Optional, Union, List, Dict
-from .data import CommandResult
-from pathlib import Path
-from logging.handlers import RotatingFileHandler
+import os
+import re
 from logging import Logger
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from subprocess import run, CalledProcessError
+from time import sleep
+from typing import Mapping, Optional, Union, List, Dict
+
+from .data import CommandResult
+
+
 # ----------------- Exceptions -----------------
 
 class SlurmError(RuntimeError):
@@ -27,11 +30,13 @@ class SlurmParseError(SlurmError):
 # ----------------- Helpers -----------------
 _JOB_ID_RE = re.compile(r"Submitted batch job\s+(\d+)")
 
+
 def _env_with(overrides: Optional[Mapping[str, str]] = None) -> Mapping[str, str]:
     env = os.environ.copy()
     if overrides:
         env.update({str(k): str(v) for k, v in overrides.items()})
     return env
+
 
 def _build_flag_kv(options: Mapping[str, Union[str, int, float, bool]]) -> List[str]:
     """
@@ -47,11 +52,13 @@ def _build_flag_kv(options: Mapping[str, Union[str, int, float, bool]]) -> List[
             args.append(f"--{key}={v}")
     return args
 
+
 def _parse_job_id(sbatch_stdout: str) -> int:
     m = _JOB_ID_RE.search(sbatch_stdout)
     if not m:
         raise SlurmParseError(f"Could not parse job id from sbatch output:\n{sbatch_stdout}")
     return int(m.group(1))
+
 
 def _default_log_path() -> Path:
     """Choose CWD/quickslurm.log, falling back to /tmp/quickslurm.log."""
@@ -64,6 +71,7 @@ def _default_log_path() -> Path:
         tmp_path = Path("/tmp/quickslurm.log")
         tmp_path.touch(exist_ok=True)
         return tmp_path
+
 
 def _get_or_create_default_logger() -> Logger:
     """
@@ -93,13 +101,16 @@ def _get_or_create_default_logger() -> Logger:
     logger.info(f"[Slurm] Logging initialized at {log_path}")
     return logger
 
+
 def _sacct_cmd(x, ops='JobID,State,ExitCode'):
     return run(
-        f'sacct -j {x} --format={ops} --noheader --parsable2', 
+        f'sacct -j {x} --format={ops} --noheader --parsable2',
         timeout=10, shell=True, capture_output=True, text=True
     )
 
+
 sacct_format = lambda x: x.strip().split('\n')[0].strip().split('|')
+
 
 def _slurm_wait(job_id) -> None:
     print(f'waiting for slurm job {job_id} to complete')
@@ -115,17 +126,18 @@ def _slurm_wait(job_id) -> None:
             if not states:
                 sleep(10)
                 continue
-        
+
             job_state = sacct_format(res.stdout)[1]
             if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
-            
+
             sleep(10)
 
         except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
+
 
 def _parse_result(job_id):
     try:
@@ -134,6 +146,7 @@ def _parse_result(job_id):
         print(f'Warning: Failed to check exit status of job! {e}')
         return "UNKNOWN", 0, 'UNKNOWN', 'UNKNOWN'
     return sacct_format(res.stdout)[:4]
+
 
 # ----------------- Convenience preset -----------------
 
@@ -157,4 +170,3 @@ def default_gpu_options(
     if cpus_per_task:
         opts["cpus-per-task"] = cpus_per_task
     return opts
-

@@ -2,7 +2,6 @@ import os
 import subprocess
 
 import pytest
-
 from quickslurm import Slurm, SlurmCommandError, SlurmError
 from quickslurm.data import SubmitResult
 from quickslurm.utils import _parse_job_id
