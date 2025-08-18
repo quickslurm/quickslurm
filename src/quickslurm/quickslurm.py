@@ -320,7 +320,7 @@ class Slurm:
             cmd += _build_flag_kv(srun_options)
         cmd += [str(c) for c in command]
 
-        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait)
+        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, wait=wait, batch=False)
 
     def scancel(
             self,
@@ -359,7 +359,7 @@ class Slurm:
             SlurmCommandError: If the scancel command fails or times out when check=True.
         """
         cmd = [scancel_path, str(job_id)]
-        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check)
+        return self._run(cmd, env=_env_with(extra_env), timeout=timeout, check=check, batch=False, wait=False)
 
     # ---------- Internal runner ----------
 
@@ -371,7 +371,8 @@ class Slurm:
             timeout: Optional[float] = None,
             check: bool = True,
             input_text: Optional[str] = None,
-            wait: bool = True
+            wait: bool = True,
+            batch: bool = True,
     ) -> SubmitResult:
         merged_env = self.base_env.copy()
         if env:
@@ -413,14 +414,21 @@ class Slurm:
             else:
                 return SubmitResult(00000, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
 
-        job_id = _parse_job_id(cp.stdout)
+        # if sbatch, we need to parse the job id and optionally wait
+        if batch:
+            job_id = _parse_job_id(cp.stdout)
 
-        if wait:
-            _slurm_wait(job_id)
-            state, exit_code, std_out, std_err = _parse_result(job_id)
-            self.logger.debug(f"[Slurm] Return code: {exit_code}")
-            return SubmitResult(job_id, state, exit_code, std_out, std_err, list(map(str, args)))
+            if wait:
+                _slurm_wait(job_id)
+                state, exit_code, std_out, std_err = _parse_result(job_id)
+                self.logger.debug(f"[Slurm] Return code: {exit_code}")
+                return SubmitResult(job_id, state, exit_code, std_out, std_err, list(map(str, args)))
 
+            else:
+                self.logger.debug(f"[Subprocess] Return code: {cp.returncode}", )
+                return SubmitResult(job_id, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
+
+        # if srun return the output directly
         else:
-            self.logger.debug(f"[Subprocess] Return code: {cp.returncode}", )
-            return SubmitResult(job_id, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
+            self.logger.debug(f"[srun] Return code: {cp.returncode}", )
+            return SubmitResult(00000, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
