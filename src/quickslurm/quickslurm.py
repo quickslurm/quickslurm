@@ -81,8 +81,7 @@ class Slurm:
                 - True: use the built-in logger (file in CWD, fallback /tmp, plus stderr).
                 - False: use a NullHandler (silent).
                 - logging.Logger object: use the provided logger. Note: this is only a log for the quickslurm module.
-            config_file_path: quick slurm config file. "quickslurm.cfg" by default. (More in README)
-                - this file can contain all of the key value pair 
+            gpu_enable: Enable GPU options for sbatch and srun. The default is False.
         """
         self.sbatch_path = sbatch_path
         self.srun_path = srun_path
