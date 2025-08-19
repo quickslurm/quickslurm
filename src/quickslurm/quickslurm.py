@@ -406,7 +406,7 @@ class Slurm:
             raise
 
         if cp.returncode != 0:
-            if check:
+            if check and batch:
                 raise SlurmCommandError(
                     f"Command failed (exit {cp.returncode}): {args}\n{cp.stderr.strip()}",
                     CommandResult(cp.returncode, cp.stdout, cp.stderr, list(map(str, args))),
@@ -431,4 +431,4 @@ class Slurm:
         # if srun return the output directly
         else:
             self.logger.debug(f"[srun] Return code: {cp.returncode}", )
-            return SubmitResult(00000, 'UNKNOWN', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
+            return SubmitResult(0, 'COMPLETE' if cp.returncode == 0 else 'FAILED', cp.returncode, cp.stdout, cp.stderr, list(map(str, args)))
