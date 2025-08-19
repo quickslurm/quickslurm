@@ -57,6 +57,10 @@ jobs:
     if: (github.event_name == 'release' && github.event.action == 'published') || github.event_name == 'workflow_dispatch'
     needs: build-docs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
