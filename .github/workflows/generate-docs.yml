@@ -41,7 +41,7 @@ jobs:
           path: ./site
   deploy:
     # Only deploy on release events or on pushes to main (i.e., merges to main).
-    if: github.event_name == 'release'
+    if: (github.event_name == 'release' && github.event.action == 'published') || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     environment:
