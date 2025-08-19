@@ -54,7 +54,8 @@ from .data import SubmitResult, CommandResult
 from .utils import (
     SlurmCommandError, SlurmError,
     _build_flag_kv, _get_or_create_default_logger,
-    _env_with, _parse_job_id, _slurm_wait, _parse_result
+    _env_with, _parse_job_id, _slurm_wait, _parse_result,
+    default_gpu_options
 )
 
 
@@ -68,7 +69,7 @@ class Slurm:
             default_timeout: Optional[float] = None,
             base_env: Optional[Mapping[str, str]] = None,
             enable_logging: Union[bool, Logger] = False,
-            config_file_path: str = 'quickslurm.cfg',
+            gpu_enable: bool = False,
     ):
         """
         Args:
@@ -87,6 +88,7 @@ class Slurm:
         self.srun_path = srun_path
         self.default_timeout = default_timeout
         self.base_env = _env_with(base_env)
+        self.with_gpu = gpu_enable
 
         if isinstance(enable_logging, logging.Logger):
             self.logger = enable_logging  # logging.getLogger(f"{enable_logging.name}.quickslurm")
@@ -170,8 +172,19 @@ class Slurm:
             script_args = []
 
         cmd = [self.sbatch_path]
+
+        # if options are porvided then run with them checking for GPU options
         if sbatch_options:
+            if self.with_gpu:
+                # use left side options to merge with default GPU to enable dynamic options
+                sbatch_options |= default_gpu_options()
             cmd += _build_flag_kv(sbatch_options)
+
+        elif self.with_gpu:
+            # if no sbatch options are provided, use default GPU options
+            cmd += _build_flag_kv(default_gpu_options())
+            
+
         cmd.append(str(script_path))
         cmd += [str(a) for a in script_args]
 

@@ -12,15 +12,13 @@ class CommandResult:
     args: List[str]
 
 
-submit_result_template = """
-SubmitResult:
+submit_result_template = """Slurm Submit Result:
     job_id: {id}
     state: {state}
     returncode: {code}
     stdout: {out}
     stderr: {err}
-    args: {args}
-"""
+    args: {args}"""
 
 
 @dataclass(frozen=True)
