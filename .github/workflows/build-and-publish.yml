@@ -1,0 +1,108 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  release:
+    types: [ published, edited ]  # fires when you publish or edit a GitHub Release
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Test with pytest
+        run: |
+          pytest
+
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material mkdocstrings[python] mkdocs-include-markdown-plugin
+          pip install -e .
+          mkdocs build --strict
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy-docs:
+    # Only deploy via THIS workflow on workflow_dispatch (useful for fast doc fixes)
+    if: (github.event_name == 'release' && github.event.action == 'published') || github.event_name == 'workflow_dispatch'
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  build:
+    needs:
+      - lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # hatch-vcs needs tags
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Build sdist/wheel
+        run: |
+          python -m pip install --upgrade pip
+          pip install build hatchling hatch-vcs
+          python -m build
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+  pypi-publish:
+    runs-on: ubuntu-latest
+    # Only run on GitHub initial release events that are NOT prereleases
+    if: github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease == false
+    needs:
+      - lint-and-test
+      - build-docs
+      - build
+    steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+          packages-dir: dist/
