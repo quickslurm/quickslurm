@@ -136,7 +136,7 @@ def test_srun_success_wait_true(monkeypatch):
         return FakeCompletedProcess(returncode=0, stdout="Submitted batch job 7777\n", stderr="")
 
     monkeypatch.setattr("quickslurm.quickslurm._slurm_wait", lambda job_id: None)
-    monkeypatch.setattr("quickslurm.quickslurm._parse_result", lambda job_id: ("UNKNOWN", 0, "done", ""))
+    monkeypatch.setattr("quickslurm.quickslurm._parse_result", lambda job_id: ("COMPLETE", 0, "done", ""))
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
@@ -144,7 +144,7 @@ def test_srun_success_wait_true(monkeypatch):
     res = slurm.srun(["echo", "hi"], srun_options={"ntasks": 1}, wait=True)
 
     assert res.job_id == 0
-    assert res.state == "UNKNOWN"
+    assert res.state == "COMPLETE"
     # assert res.stdout == "done"
 
 
@@ -164,7 +164,7 @@ def test_scancel_success(monkeypatch):
     res = slurm.scancel(123)
 
     assert res.job_id == 0
-    assert res.state == "UNKNOWN"
+    assert res.state == "COMPLETE"
     assert res.returncode == 0
 
 
