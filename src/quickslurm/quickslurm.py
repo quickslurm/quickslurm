@@ -191,7 +191,7 @@ class Slurm:
 
     def submit_inline(
             self,
-            command: Sequence[str],
+            command: Sequence[str] | str,
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             shebang: str = "#!/bin/bash -l",
             workdir: Optional[Union[str, Path]] = None,
@@ -215,7 +215,8 @@ class Slurm:
         True, the call blocks until the job reaches a terminal state.
 
         Args:
-            command: The program and its arguments to run (e.g., ["python", "train.py", "--epochs", "5"]).
+            command: The program and its arguments to run (e.g., ["python", "train.py", "--epochs", "5"]). 
+                This can also be a string command that is space delimited.
             sbatch_options: Optional mapping of sbatch options (e.g., {"time": "00:10:00", "partition": "short"}).
                 Boolean values are treated as flags (True -> present, False -> omitted).
             shebang: Script interpreter line to place at the top of the generated script.
@@ -249,7 +250,8 @@ class Slurm:
             print(sub.job_id)
             ```
         """
-
+        if isinstance(command, str):
+            command = command.split(' ')
         cmd_line = " ".join(shlex.quote(str(c)) for c in command)
         parts = [shebang, "set -euo pipefail"]
         if workdir:
