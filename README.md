@@ -1,8 +1,5 @@
 # quickslurm
-[![Lint/Test](https://github.com/quickslurm/quickslurm/actions/workflows/lint-and-pytest.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/lint-and-pytest.yml)
-[![Build/Publish](https://github.com/quickslurm/quickslurm/actions/workflows/build-and-publish-to-pypi.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/build-and-publish-to-pypi.yml.yml)
-[![Docs](https://github.com/quickslurm/quickslurm/actions/workflows/generate-docs.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/generate-docs.yml)
-
+[![Build/Publish](https://github.com/quickslurm/quickslurm/actions/workflows/docs-build-and-publish.yml/badge.svg?branch=main)](https://github.com/quickslurm/quickslurm/actions/workflows/docs-build-and-publish.yml)
 [![PyPI](https://img.shields.io/pypi/v/quickslurm)](https://pypi.org/project/quickslurm/)
 [![Python versions](https://img.shields.io/pypi/pyversions/quickslurm)](https://pypi.org/project/quickslurm/)
 [![License](https://img.shields.io/github/license/quickslurm/quickslurm)](https://github.com/quickslurm/quickslurm/blob/main/LICENSE)
