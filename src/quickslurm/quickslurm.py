@@ -191,7 +191,7 @@ class Slurm:
 
     def submit_inline(
             self,
-            command: Sequence[str] | str,
+            command: Union[Sequence[str], str],
             sbatch_options: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
             shebang: str = "#!/bin/bash -l",
             workdir: Optional[Union[str, Path]] = None,
