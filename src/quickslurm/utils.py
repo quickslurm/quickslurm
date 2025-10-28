@@ -120,15 +120,16 @@ def _slurm_wait(job_id) -> None:
 
     while True:
         try:
-            res = _sacct_cmd(job_id, 'JobID,State')
+            # sacct -j job_id --format=JobID,State --noheader --parsable2
+            res = _sacct_cmd(job_id, 'State')
 
-            states = res.stdout.strip().split('\n')
-            if not states:
+            state = sacct_format(res.stdout)
+            if not state:
                 sleep(10)
                 continue
 
-            job_state = sacct_format(res.stdout)[1]
-            if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL']:
+            job_state = state[0]
+            if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL', 'OUT_OF_MEMORY']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
 
@@ -142,10 +143,10 @@ def _slurm_wait(job_id) -> None:
 def _parse_result(job_id):
     try:
         res = _sacct_cmd(job_id, ops='State,ExitCode,StdOut,StdErr')
+        return sacct_format(res.stdout)[:4]
     except Exception as e:
         print(f'Warning: Failed to check exit status of job! {e}')
         return "UNKNOWN", 0, 'UNKNOWN', 'UNKNOWN'
-    return sacct_format(res.stdout)[:4]
 
 
 # ----------------- Convenience preset -----------------

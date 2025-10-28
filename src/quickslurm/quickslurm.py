@@ -68,7 +68,7 @@ class Slurm:
             srun_path: str = "srun",
             default_timeout: Optional[float] = None,
             base_env: Optional[Mapping[str, str]] = None,
-            enable_logging: Union[bool, Logger] = False,
+            logger: Union[bool, Logger] = False,
             gpu_enable: bool = False,
     ):
         """
@@ -77,7 +77,7 @@ class Slurm:
             srun_path: Path to srun binary. The default is "srun".
             default_timeout: Default timeout (seconds) for subprocess runs. The default is None.
             base_env: Environment variables applied to every call. The default is None. Passed as a dict if used.
-            enable_logging:
+            logger:
                 - True: use the built-in logger (file in CWD, fallback /tmp, plus stderr).
                 - False: use a NullHandler (silent).
                 - logging.Logger object: use the provided logger. Note: this is only a log for the quickslurm module.
@@ -89,9 +89,9 @@ class Slurm:
         self.base_env = _env_with(base_env)
         self.with_gpu = gpu_enable
 
-        if isinstance(enable_logging, logging.Logger):
-            self.logger = enable_logging  # logging.getLogger(f"{enable_logging.name}.quickslurm")
-        elif enable_logging:
+        if isinstance(logger, logging.Logger):
+            self.logger = logger  # logging.getLogger(f"{enable_logging.name}.quickslurm")
+        elif logger:
             self.logger = _get_or_create_default_logger()
         else:
             self.logger = logging.getLogger("quickslurm.null")
