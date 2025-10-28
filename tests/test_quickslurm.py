@@ -37,7 +37,7 @@ def test_sbatch_success_wait_true(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     res = slurm.sbatch(script_path="script.sh", wait=True)
 
     assert isinstance(res, SubmitResult)
@@ -55,7 +55,7 @@ def test_sbatch_failure_raises(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     with pytest.raises(SlurmCommandError) as exc:
         slurm.sbatch(script_path="oops.sh", check=True, wait=False)
     assert "boom" in str(exc.value)
@@ -67,7 +67,7 @@ def test_sbatch_check_false_returns_result(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     res = slurm.sbatch(script_path="x.sh", check=False, wait=False)
 
     assert isinstance(res, SubmitResult)
@@ -90,7 +90,7 @@ def test_sbatch_builds_flags(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     slurm.sbatch(
         script_path="train.sh",
         sbatch_options={"exclusive": True, "cpus_per_task": 4},
@@ -117,7 +117,7 @@ def test_submit_inline_calls_sbatch_and_cleans_up(monkeypatch, tmp_path):
     monkeypatch.setattr(Slurm, "sbatch", fake_sbatch, raising=False)
     monkeypatch.setattr(os, "unlink", fake_unlink)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     res = slurm.submit_inline(
         command=["python", "train.py", "--epochs", "1"],
         sbatch_options={"time": "00:01:00"},
@@ -140,7 +140,7 @@ def test_srun_success_wait_true(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     res = slurm.srun(["echo", "hi"], srun_options={"ntasks": 1}, wait=True)
 
     assert res.job_id == 0
@@ -160,7 +160,7 @@ def test_scancel_success(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     res = slurm.scancel(123)
 
     assert res.job_id == 0
@@ -174,7 +174,7 @@ def test_run_timeout_raises(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     with pytest.raises(SlurmCommandError) as exc:
         slurm.sbatch(script_path="train.sh", timeout=1)
     assert "timed out" in str(exc.value).lower()
@@ -186,7 +186,7 @@ def test_file_not_found_raises(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(enable_logging=False)
+    slurm = Slurm(logger=False)
     with pytest.raises(SlurmError):
         slurm.sbatch(script_path="train.sh")
 
@@ -203,7 +203,7 @@ def test_env_merge(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    slurm = Slurm(base_env={"BASE_ONLY": "1"}, enable_logging=False)
+    slurm = Slurm(base_env={"BASE_ONLY": "1"}, logger=False)
     _ = slurm.sbatch(script_path="env.sh", extra_env={"PER_CALL": "yes"}, wait=True)
 
     assert seen["env"]["BASE_ONLY"] == "1"
