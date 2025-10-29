@@ -10,6 +10,7 @@ from typing import Mapping, Optional, Union, List, Dict
 
 from .data import CommandResult
 
+WAIT_TIME = 30
 
 # ----------------- Exceptions -----------------
 
@@ -125,26 +126,30 @@ def _slurm_wait(job_id) -> None:
 
             state = sacct_format(res.stdout)
             if not state:
-                sleep(10)
                 continue
 
             job_state = state[0]
             if job_state in ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL', 'OUT_OF_MEMORY']:
                 print(f'Job {job_id} finished with state: {job_state}')
                 return
-
-            sleep(10)
-
+        
         except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
             if res:
                 print(f'sacct output: {res.stdout}, {res.stderr}')
-            sleep(10)
+            
         except IndexError as e:
             print(f'Failed to parse sacct output: {e}')
             if res:
                 print(f'sacct output: {res.stdout}, {res.stderr}')
-            sleep(10)
+            
+        except Exception as e:
+            print(f'Unknown exception occurred: {e}')
+            if res:
+                print(f'sacct output: {res.stdout}, {res.stderr}')
+            
+        finally:
+            sleep(WAIT_TIME)
 
 
 def _parse_result(job_id):
