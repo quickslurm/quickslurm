@@ -137,6 +137,13 @@ def _slurm_wait(job_id) -> None:
 
         except CalledProcessError as e:
             print(f'Failed to check slurm status: {e}')
+            if res:
+                print(f'sacct output: {res.stdout}, {res.stderr}')
+            sleep(10)
+        except IndexError as e:
+            print(f'Failed to parse sacct output: {e}')
+            if res:
+                print(f'sacct output: {res.stdout}, {res.stderr}')
             sleep(10)
 
 
