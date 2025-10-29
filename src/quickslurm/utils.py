@@ -135,7 +135,7 @@ def _slurm_wait(job_id) -> None:
 
             sleep(10)
 
-        except CalledProcessError as e:
+        except Exception as e:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
 
