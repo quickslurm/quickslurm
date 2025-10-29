@@ -4,7 +4,7 @@ import re
 from logging import Logger
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from subprocess import run, CalledProcessError
+from subprocess import run
 from time import sleep
 from typing import Mapping, Optional, Union, List, Dict
 
@@ -135,7 +135,7 @@ def _slurm_wait(job_id) -> None:
 
             sleep(10)
 
-        except CalledProcessError as e:
+        except Exception as e:
             print(f'Failed to check slurm status: {e}')
             sleep(10)
 
